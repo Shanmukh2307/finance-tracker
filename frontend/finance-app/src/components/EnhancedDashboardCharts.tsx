@@ -436,36 +436,46 @@ export const MonthlyTrendChart: React.FC<{ stats: DashboardStats }> = ({ stats }
         <CardDescription>All-time income, expenses, and running balance</CardDescription>
       </CardHeader>
       <CardContent>
-        <ResponsiveContainer width="100%" height={300}>
-          <LineChart data={processedData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="monthName" />
-            <YAxis tickFormatter={formatCurrency} />
-            <Tooltip formatter={(value: number) => formatCurrency(value)} />
-            <Legend />
-            <Line 
-              type="monotone" 
-              dataKey="income" 
-              stroke="#10b981" 
-              strokeWidth={2}
-              name="Income"
-            />
-            <Line 
-              type="monotone" 
-              dataKey="expense" 
-              stroke="#ef4444" 
-              strokeWidth={2}
-              name="Expense"
-            />
-            <Line 
-              type="monotone" 
-              dataKey="balance" 
-              stroke="#3b82f6" 
-              strokeWidth={2}
-              name="Balance"
-            />
-          </LineChart>
-        </ResponsiveContainer>
+        {processedData.length === 0 ? (
+          <div className="flex items-center justify-center h-[300px] text-muted-foreground">
+            <div className="text-center">
+              <TrendingUp className="h-12 w-12 mx-auto mb-4 opacity-50" />
+              <p className="text-lg font-medium">No monthly trend data</p>
+              <p className="text-sm">Start adding transactions to see your monthly trends</p>
+            </div>
+          </div>
+        ) : (
+          <ResponsiveContainer width="100%" height={300}>
+            <LineChart data={processedData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="monthName" />
+              <YAxis tickFormatter={formatCurrency} />
+              <Tooltip formatter={(value: number) => formatCurrency(value)} />
+              <Legend />
+              <Line 
+                type="monotone" 
+                dataKey="income" 
+                stroke="#10b981" 
+                strokeWidth={2}
+                name="Income"
+              />
+              <Line 
+                type="monotone" 
+                dataKey="expense" 
+                stroke="#ef4444" 
+                strokeWidth={2}
+                name="Expense"
+              />
+              <Line 
+                type="monotone" 
+                dataKey="balance" 
+                stroke="#3b82f6" 
+                strokeWidth={2}
+                name="Balance"
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        )}
       </CardContent>
     </Card>
   );
@@ -543,10 +553,24 @@ export const DailySpendingChart: React.FC<{ dailyStats?: DashboardStats | null }
 export const EnhancedDashboardCharts: React.FC<ChartProps> = ({ stats, dailyStats, monthlySummary }) => {
   if (!stats || !stats.totals.length) {
     return (
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {[...Array(4)].map((_, i) => (
-          <div key={i} className="h-[400px] bg-muted/50 rounded-lg animate-pulse" />
-        ))}
+      <div className="space-y-6">
+        <Card>
+          <CardContent className="flex items-center justify-center h-[400px]">
+            <div className="text-center">
+              <BarChart3 className="h-16 w-16 mx-auto mb-6 text-muted-foreground/50" />
+              <h3 className="text-xl font-semibold text-foreground mb-2">No Data Available</h3>
+              <p className="text-muted-foreground mb-4 max-w-md">
+                It looks like you haven't added any transactions yet. Start by adding your income and expenses to see your financial insights.
+              </p>
+              <div className="space-y-2 text-sm text-muted-foreground">
+                <p>• Track your income and expenses</p>
+                <p>• View spending by category</p>
+                <p>• Monitor monthly trends</p>
+                <p>• Analyze daily spending patterns</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }

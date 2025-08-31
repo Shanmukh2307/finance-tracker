@@ -37,10 +37,12 @@ import {
   TrendingUp,
   TrendingDown,
   Loader2,
-  AlertCircle
+  AlertCircle,
+  Upload
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Transaction, Category, dashboardApi } from "@/lib/api";
+import BulkImportModal from "@/components/BulkImportModal";
 
 // API functions for transactions
 const transactionsApi = dashboardApi;
@@ -64,6 +66,7 @@ export default function TransactionsPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [totalTransactions, setTotalTransactions] = useState(0);
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
+  const [showBulkImport, setShowBulkImport] = useState(false);
 
   const [filters, setFilters] = useState<TransactionFilters>({
     search: '',
@@ -298,6 +301,14 @@ export default function TransactionsPage() {
                 fetchTransactions(currentPage);
               }}
             />
+            <Button 
+              variant="outline" 
+              onClick={() => setShowBulkImport(true)}
+              className="flex items-center space-x-2"
+            >
+              <Upload className="h-4 w-4" />
+              <span>Add Multiple Transactions</span>
+            </Button>
           </div>
         </div>
 
@@ -659,6 +670,16 @@ export default function TransactionsPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Bulk Import Modal */}
+      <BulkImportModal
+        isOpen={showBulkImport}
+        onClose={() => setShowBulkImport(false)}
+        onSuccess={() => {
+          fetchTransactions(currentPage);
+          setShowBulkImport(false);
+        }}
+      />
     </MainLayout>
   );
 }

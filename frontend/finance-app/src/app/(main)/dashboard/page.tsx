@@ -19,7 +19,8 @@ import {
   Upload,
   Loader2,
   AlertCircle,
-  RefreshCw
+  RefreshCw,
+  BarChart3
 } from "lucide-react";
 
 export default function DashboardPage() {
@@ -203,21 +204,55 @@ export default function DashboardPage() {
         </div>
 
         {/* Charts Section */}
-        {!isLoading && stats && (
-          <div className="space-y-6">
-            <div className="flex justify-between items-center">
-              <h2 className="text-2xl font-bold text-foreground">Financial Analytics</h2>
-              <div className="text-sm text-muted-foreground">
-                Current month: {new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
-              </div>
+        <div className="space-y-6">
+          <div className="flex justify-between items-center">
+            <h2 className="text-2xl font-bold text-foreground">Financial Analytics</h2>
+            <div className="text-sm text-muted-foreground">
+              Current month: {new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
             </div>
+          </div>
+          {isLoading ? (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {[...Array(4)].map((_, i) => (
+                <Card key={i}>
+                  <CardHeader>
+                    <div className="flex items-center space-x-2">
+                      <div className="w-5 h-5 bg-muted rounded animate-pulse" />
+                      <div className="w-32 h-5 bg-muted rounded animate-pulse" />
+                    </div>
+                    <div className="w-48 h-4 bg-muted rounded animate-pulse" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex items-center justify-center h-[300px]">
+                      <div className="flex items-center space-x-2">
+                        <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                        <span className="text-muted-foreground">Loading chart data...</span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : stats ? (
             <EnhancedDashboardCharts 
               stats={stats} 
               dailyStats={dailyStats}
               monthlySummary={monthlySummary!} 
             />
-          </div>
-        )}
+          ) : (
+            <Card>
+              <CardContent className="flex items-center justify-center h-[400px]">
+                <div className="text-center">
+                  <BarChart3 className="h-16 w-16 mx-auto mb-6 text-muted-foreground/50" />
+                  <h3 className="text-xl font-semibold text-foreground mb-2">No Data Available</h3>
+                  <p className="text-muted-foreground mb-4">
+                    Start adding transactions to see your financial insights.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </div>
 
         {/* Quick Actions */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
