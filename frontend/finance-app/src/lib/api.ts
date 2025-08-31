@@ -214,6 +214,10 @@ export interface Category {
   description?: string;
   isDefault: boolean;
   userId?: string;
+  budget?: number;
+  parentCategory?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface ReceiptData {
@@ -238,3 +242,140 @@ export const createTransaction = dashboardApi.createTransaction;
 export const updateTransaction = dashboardApi.updateTransaction;
 export const deleteTransaction = dashboardApi.deleteTransaction;
 export const uploadReceipt = dashboardApi.uploadReceipt;
+
+// Category API functions
+const categoryApi = {
+  // Get all categories
+  getCategories: async () => {
+    const response = await axios.get(`${API_BASE_URL}/categories`, {
+      headers: getAuthHeaders()
+    });
+    return response.data.data.categories;
+  },
+
+  // Get single category
+  getCategory: async (id: string) => {
+    const response = await axios.get(`${API_BASE_URL}/categories/${id}`, {
+      headers: getAuthHeaders()
+    });
+    return response.data.data.category;
+  },
+
+  // Create category
+  createCategory: async (categoryData: {
+    name: string;
+    description?: string;
+    type: 'income' | 'expense' | 'both';
+    color: string;
+    icon: string;
+    parentCategory?: string;
+    budget?: number;
+  }) => {
+    const response = await axios.post(`${API_BASE_URL}/categories`, categoryData, {
+      headers: getAuthHeaders()
+    });
+    return response.data.data.category;
+  },
+
+  // Update category
+  updateCategory: async (id: string, categoryData: {
+    name?: string;
+    description?: string;
+    type?: 'income' | 'expense' | 'both';
+    color?: string;
+    icon?: string;
+    parentCategory?: string;
+    budget?: number;
+  }) => {
+    const response = await axios.put(`${API_BASE_URL}/categories/${id}`, categoryData, {
+      headers: getAuthHeaders()
+    });
+    return response.data.data.category;
+  },
+
+  // Delete category
+  deleteCategory: async (id: string) => {
+    const response = await axios.delete(`${API_BASE_URL}/categories/${id}`, {
+      headers: getAuthHeaders()
+    });
+    return response.data;
+  },
+
+  // Get default categories
+  getDefaultCategories: async () => {
+    const response = await axios.get(`${API_BASE_URL}/categories/defaults`);
+    return response.data.data.categories;
+  },
+
+  // Initialize default categories
+  initializeDefaultCategories: async () => {
+    const response = await axios.post(`${API_BASE_URL}/categories/initialize-defaults`, {}, {
+      headers: getAuthHeaders()
+    });
+    return response.data;
+  }
+};
+
+// Export the categoryApi object
+export { categoryApi };
+
+// Auth API functions
+const authApi = {
+  // Get current user profile
+  getProfile: async () => {
+    const response = await axios.get(`${API_BASE_URL}/auth/profile`, {
+      headers: getAuthHeaders()
+    });
+    return response.data.data.user;
+  },
+
+  // Update user profile
+  updateProfile: async (profileData: {
+    name?: string;
+    preferences?: {
+      currency?: string;
+      dateFormat?: string;
+      theme?: string;
+    };
+  }) => {
+    const response = await axios.put(`${API_BASE_URL}/auth/profile`, profileData, {
+      headers: getAuthHeaders()
+    });
+    return response.data.data.user;
+  },
+
+  // Change password
+  changePassword: async (passwordData: {
+    currentPassword: string;
+    newPassword: string;
+  }) => {
+    const response = await axios.put(`${API_BASE_URL}/auth/change-password`, passwordData, {
+      headers: getAuthHeaders()
+    });
+    return response.data;
+  },
+
+  // Deactivate account
+  deactivateAccount: async () => {
+    const response = await axios.put(`${API_BASE_URL}/auth/deactivate`, {}, {
+      headers: getAuthHeaders()
+    });
+    return response.data;
+  },
+
+  // Logout
+  logout: async () => {
+    const response = await axios.post(`${API_BASE_URL}/auth/logout`, {}, {
+      headers: getAuthHeaders()
+    });
+    return response.data;
+  }
+};
+
+// Export the authApi object
+export { authApi };
+
+// Export individual category functions
+export const createCategory = categoryApi.createCategory;
+export const updateCategory = categoryApi.updateCategory;
+export const deleteCategory = categoryApi.deleteCategory;

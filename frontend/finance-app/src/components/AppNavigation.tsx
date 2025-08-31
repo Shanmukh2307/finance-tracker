@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { Button } from "@/components/ui/button";
 import { 
   DollarSign, 
@@ -31,13 +32,13 @@ export default function AppNavigation() {
   };
 
   return (
-    <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
+    <header className="bg-background border-b border-border sticky top-0 z-50">
       <div className="w-4/5 mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
           <Link href="/dashboard" className="flex items-center space-x-2">
             <DollarSign className="h-8 w-8 text-primary" />
-            <span className="text-xl font-bold text-gray-900">FinanceTracker</span>
+            <span className="text-xl font-bold text-foreground">FinanceTracker</span>
           </Link>
 
           {/* Navigation */}
@@ -51,7 +52,7 @@ export default function AppNavigation() {
                   className={`inline-flex items-center px-1 pt-1 text-sm font-medium transition-colors ${
                     isActive
                       ? "text-primary border-b-2 border-primary"
-                      : "text-gray-500 hover:text-gray-700"
+                      : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
                   <item.icon className="h-4 w-4 mr-2" />
@@ -63,7 +64,8 @@ export default function AppNavigation() {
 
           {/* User Menu */}
           <div className="flex items-center space-x-4">
-            <div className="hidden sm:flex items-center space-x-2 text-sm text-gray-600">
+            <ThemeToggle />
+            <div className="hidden sm:flex items-center space-x-2 text-sm text-muted-foreground">
               <User className="h-4 w-4" />
               <span>{user?.name}</span>
             </div>
@@ -80,7 +82,7 @@ export default function AppNavigation() {
         </div>
 
         {/* Mobile Navigation */}
-        <div className="md:hidden border-t border-gray-200 pt-4 pb-3">
+        <div className="md:hidden border-t border-border pt-4 pb-3">
           <div className="flex flex-col space-y-2">
             {navigation.map((item) => {
               const isActive = pathname === item.href;
@@ -91,7 +93,7 @@ export default function AppNavigation() {
                   className={`inline-flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors ${
                     isActive
                       ? "text-primary bg-primary/10"
-                      : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                      : "text-muted-foreground hover:text-foreground hover:bg-accent"
                   }`}
                 >
                   <item.icon className="h-4 w-4 mr-3" />
