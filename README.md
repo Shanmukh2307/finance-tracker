@@ -199,13 +199,6 @@ MAX_FILE_SIZE=10485760  # 10MB in bytes
 UPLOAD_PATH=./uploads
 ```
 
-#### Seed the database (Optional)
-```bash
-npm run seed
-# or
-node seedData.js
-```
-
 #### Start the backend server
 ```bash
 # Development mode (with auto-restart)
