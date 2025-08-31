@@ -83,6 +83,37 @@ export const validateTransaction = [
     .isLength({ min: 1, max: 50 })
     .withMessage('Category name must be between 1 and 50 characters'),
   
+  // Receipt-related optional fields
+  body('receiptFileInfo')
+    .optional()
+    .isObject()
+    .withMessage('Receipt file info must be an object'),
+  
+  body('receiptFileInfo.tempFileId')
+    .optional()
+    .isString()
+    .withMessage('Receipt temp file ID must be a string'),
+  
+  body('receiptFileInfo.originalName')
+    .optional()
+    .isString()
+    .withMessage('Receipt original name must be a string'),
+  
+  body('receiptData')
+    .optional()
+    .isObject()
+    .withMessage('Receipt data must be an object'),
+  
+  body('receiptData.storeName')
+    .optional()
+    .isString()
+    .withMessage('Store name must be a string'),
+  
+  body('receiptData.total')
+    .optional()
+    .isFloat({ min: 0 })
+    .withMessage('Receipt total must be a positive number'),
+  
   // Custom validation to ensure either categoryId, categoryName, or category is provided
   body().custom((value, { req }) => {
     const hasCategory = req.body.categoryId || req.body.categoryName || req.body.category;
@@ -94,6 +125,18 @@ export const validateTransaction = [
     const categoryFields = [req.body.categoryId, req.body.categoryName, req.body.category].filter(Boolean);
     if (categoryFields.length > 1) {
       throw new Error('Provide only one: categoryId, categoryName, or category');
+    }
+    return true;
+  }),
+  
+  // Custom validation for receipt consistency
+  body().custom((value, { req }) => {
+    const hasReceiptFileInfo = req.body.receiptFileInfo;
+    const hasReceiptData = req.body.receiptData;
+    
+    // If one is provided, both should be provided
+    if ((hasReceiptFileInfo && !hasReceiptData) || (!hasReceiptFileInfo && hasReceiptData)) {
+      throw new Error('Both receiptFileInfo and receiptData must be provided together');
     }
     return true;
   }),

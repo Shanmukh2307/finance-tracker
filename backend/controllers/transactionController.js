@@ -1,6 +1,8 @@
 import Transaction from '../models/Transaction.js';
 import Category from '../models/Category.js';
 import mongoose from 'mongoose';
+import path from 'path';
+import fs from 'fs';
 import { asyncHandler } from '../middleware/errorHandler.js';
 
 // Helper function to ensure userId is ObjectId
@@ -24,7 +26,10 @@ export const createTransaction = asyncHandler(async (req, res) => {
     tags,
     notes,
     currency,
-    recurring
+    recurring,
+    // New receipt-related fields
+    receiptFileInfo,
+    receiptData
   } = req.body;
 
   let category;
@@ -76,7 +81,8 @@ export const createTransaction = asyncHandler(async (req, res) => {
     });
   }
 
-  const transaction = await Transaction.create({
+  // Prepare transaction data
+  const transactionData = {
     userId: req.user.id,
     type,
     amount,
@@ -88,7 +94,62 @@ export const createTransaction = asyncHandler(async (req, res) => {
     notes,
     currency: currency || req.user.preferences?.currency || 'USD',
     recurring
-  });
+  };
+
+  // Handle receipt data if provided
+  if (receiptFileInfo && receiptData) {
+    console.log('=== PROCESSING RECEIPT DATA FOR TRANSACTION ===');
+    console.log('📄 Receipt file:', receiptFileInfo.originalName);
+    console.log('🏪 Store name:', receiptData.storeName);
+    console.log('💰 Receipt total:', receiptData.total);
+    
+    try {
+      // Move file from temp to permanent location
+      const tempPath = receiptFileInfo.tempPath;
+      const permanentDir = path.join(path.dirname(tempPath), '..', 'receipts');
+      
+      // Ensure permanent directory exists
+      if (!fs.existsSync(permanentDir)) {
+        fs.mkdirSync(permanentDir, { recursive: true });
+      }
+      
+      // Generate permanent filename
+      const permanentFilename = `receipt-${Date.now()}-${Math.round(Math.random() * 1E9)}${path.extname(receiptFileInfo.originalName)}`;
+      const permanentPath = path.join(permanentDir, permanentFilename);
+      
+      // Move file from temp to permanent location
+      fs.renameSync(tempPath, permanentPath);
+      
+      console.log('✅ Receipt file moved to permanent storage:', permanentFilename);
+      
+      // Add receipt data to transaction
+      transactionData.receipt = {
+        filename: permanentFilename,
+        originalName: receiptFileInfo.originalName,
+        mimetype: receiptFileInfo.mimetype,
+        size: receiptFileInfo.size,
+        path: permanentPath,
+        storeName: receiptData.storeName,
+        total: receiptData.total,
+        tax: receiptData.tax,
+        subtotal: receiptData.subtotal,
+        items: receiptData.items || [],
+        ocrConfidence: receiptData.ocrConfidence,
+        ocrEngine: receiptData.ocrEngine,
+        needsReview: receiptData.needsReview,
+        reviewReason: receiptData.reviewReason,
+        processedAt: new Date(),
+        extractedAt: receiptFileInfo.uploadedAt
+      };
+      
+    } catch (fileError) {
+      console.error('❌ Error processing receipt file:', fileError.message);
+      // Continue with transaction creation but without receipt data
+      console.log('⚠️ Proceeding with transaction creation without receipt attachment');
+    }
+  }
+
+  const transaction = await Transaction.create(transactionData);
 
   // Populate category for response
   await transaction.populate('categoryId', 'name color icon type');
@@ -96,7 +157,24 @@ export const createTransaction = asyncHandler(async (req, res) => {
   res.status(201).json({
     success: true,
     message: 'Transaction created successfully',
-    data: { transaction }
+    data: { 
+      transaction: {
+        id: transaction._id,
+        amount: transaction.amount,
+        description: transaction.description,
+        categoryId: transaction.categoryId,
+        date: transaction.date,
+        type: transaction.type,
+        receipt: transaction.receipt ? {
+          storeName: transaction.receipt.storeName,
+          total: transaction.receipt.total,
+          itemCount: transaction.receipt.items?.length || 0,
+          ocrConfidence: transaction.receipt.ocrConfidence,
+          ocrEngine: transaction.receipt.ocrEngine,
+          needsReview: transaction.receipt.needsReview
+        } : null
+      }
+    }
   });
 });
 

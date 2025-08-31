@@ -7,6 +7,7 @@ import Category from '../models/Category.js';
 import { asyncHandler } from '../middleware/errorHandler.js';
 import tesseractOcrService from '../services/tesseractOcrService.js';
 import textractOcrService from '../services/textractOcrService.js';
+import { getTempReceiptsStats } from '../utils/receiptCleanup.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -53,6 +54,140 @@ export const upload = multer({
   fileFilter,
   limits: {
     fileSize: parseInt(process.env.MAX_FILE_SIZE) || 10 * 1024 * 1024 // 10MB default
+  }
+});
+
+// Configure multer for temporary receipt storage
+const tempStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const tempPath = path.join(__dirname, '..', 'uploads', 'temp-receipts');
+    
+    // Create directory if it doesn't exist
+    if (!fs.existsSync(tempPath)) {
+      fs.mkdirSync(tempPath, { recursive: true });
+    }
+    
+    cb(null, tempPath);
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, `temp-receipt-${uniqueSuffix}${path.extname(file.originalname)}`);
+  }
+});
+
+export const tempUpload = multer({
+  storage: tempStorage,
+  fileFilter,
+  limits: {
+    fileSize: parseInt(process.env.MAX_FILE_SIZE) || 10 * 1024 * 1024 // 10MB default
+  }
+});
+
+// @desc    Extract receipt data without creating transaction
+// @route   POST /api/upload/extract-receipt
+// @access  Private
+export const extractReceiptData = asyncHandler(async (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({
+      success: false,
+      message: 'No file uploaded'
+    });
+  }
+
+  console.log('=== EXTRACT RECEIPT DATA ===');
+  console.log('Processing receipt extraction:', req.file.originalname);
+
+  const { ocrEngine = 'textract' } = req.body;
+  
+  console.log('🤖 OCR Engine:', ocrEngine);
+  console.log('📁 Temp file path:', req.file.path);
+  console.log('📄 File type:', req.file.mimetype);
+  console.log('📊 File size:', req.file.size, 'bytes');
+
+  const receiptFileInfo = {
+    tempFileId: req.file.filename, // Temporary file identifier
+    originalName: req.file.originalname,
+    mimetype: req.file.mimetype,
+    size: req.file.size,
+    tempPath: req.file.path,
+    uploadedAt: new Date()
+  };
+
+  let extractedData = null;
+  let processingError = null;
+  let ocrService = null;
+
+  try {
+    console.log('🚀 Starting OCR processing...');
+    
+    // Choose OCR service based on parameter
+    if (ocrEngine === 'tesseract') {
+      console.log('📝 Using Tesseract OCR Service');
+      ocrService = tesseractOcrService;
+      extractedData = await ocrService.processReceipt(req.file.path, req.file.mimetype);
+    } else {
+      console.log('🏢 Using AWS Textract OCR Service');
+      ocrService = textractOcrService;
+      const imageBuffer = fs.readFileSync(req.file.path);
+      extractedData = await ocrService.processReceiptWithTextract(imageBuffer, req.file.originalname);
+    }
+    
+    console.log('✅ OCR processing completed successfully');
+    console.log(`🤖 OCR Engine used: ${extractedData.ocrEngine}`);
+    console.log(`🎯 Confidence: ${extractedData.ocrConfidence}%`);
+    
+  } catch (error) {
+    console.error('=== OCR EXTRACTION ERROR ===');
+    console.error('❌ Receipt processing error:', error.message);
+    processingError = error.message;
+    
+    // Fallback to Tesseract if Textract fails
+    if (ocrEngine === 'textract' && !extractedData) {
+      try {
+        console.log('🔄 Falling back to Tesseract OCR...');
+        extractedData = await tesseractOcrService.processReceipt(req.file.path, req.file.mimetype);
+        console.log('✅ Fallback OCR processing completed');
+        processingError = null; // Clear error since fallback succeeded
+      } catch (fallbackError) {
+        console.error('❌ Fallback OCR also failed:', fallbackError.message);
+        processingError = `Primary OCR failed: ${error.message}. Fallback also failed: ${fallbackError.message}`;
+      }
+    }
+  }
+
+  if (extractedData && !processingError) {
+    res.status(200).json({
+      success: true,
+      message: 'Receipt data extracted successfully',
+      data: {
+        receiptFileInfo,
+        extractedData: {
+          storeName: extractedData.storeName || extractedData.vendor,
+          date: extractedData.date,
+          items: extractedData.items || [],
+          total: extractedData.total,
+          tax: extractedData.tax,
+          subtotal: extractedData.subtotal,
+          itemCount: extractedData.items?.length || 0,
+          ocrConfidence: extractedData.confidence || extractedData.ocrConfidence,
+          ocrEngine: extractedData.engine || extractedData.ocrEngine,
+          needsReview: extractedData.needsReview,
+          reviewReason: extractedData.reviewReason
+        }
+      }
+    });
+  } else {
+    // If OCR failed, still return file info for manual entry
+    res.status(200).json({
+      success: false,
+      message: 'Receipt uploaded but OCR processing failed',
+      data: {
+        receiptFileInfo,
+        extractedData: null,
+        processingError,
+        fallbackToManual: true
+      }
+    });
   }
 });
 
@@ -804,6 +939,59 @@ export const getOcrEngines = asyncHandler(async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Failed to get OCR engines information'
+    });
+  }
+});
+
+// @desc    Get receipt processing system status
+// @route   GET /api/upload/system-status
+// @access  Private
+export const getSystemStatus = asyncHandler(async (req, res) => {
+  try {
+    const tempStats = getTempReceiptsStats();
+    
+    // Check directory existence
+    const uploadsDir = path.join(__dirname, '..', 'uploads');
+    const receiptsDir = path.join(uploadsDir, 'receipts');
+    const tempReceiptsDir = path.join(uploadsDir, 'temp-receipts');
+    
+    const directories = {
+      uploads: fs.existsSync(uploadsDir),
+      receipts: fs.existsSync(receiptsDir),
+      tempReceipts: fs.existsSync(tempReceiptsDir)
+    };
+    
+    // Check OCR services status
+    const ocrStatus = {
+      tesseract: 'available',
+      textract: (process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY && process.env.AWS_BUCKET_NAME) ? 'available' : 'not_configured'
+    };
+    
+    res.json({
+      success: true,
+      data: {
+        directories,
+        tempReceiptsStats: tempStats,
+        ocrEngines: ocrStatus,
+        features: {
+          extractOnly: true,
+          autoCreate: true,
+          tempStorage: true,
+          cleanup: true
+        },
+        endpoints: {
+          extractOnly: '/api/upload/extract-receipt',
+          autoCreate: '/api/upload/receipt',
+          createTransaction: '/api/transactions'
+        }
+      }
+    });
+    
+  } catch (error) {
+    console.error('Get system status error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to get system status'
     });
   }
 });

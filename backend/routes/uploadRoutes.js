@@ -1,13 +1,16 @@
 import express from 'express';
 import {
   upload,
+  tempUpload,
   uploadReceipt,
+  extractReceiptData,
   processUploadedReceipt,
   createTransactionFromReceipt,
   getReceiptFile,
   uploadTransactionHistory,
   getReceiptDetails,
-  getOcrEngines
+  getOcrEngines,
+  getSystemStatus
 } from '../controllers/uploadController.js';
 import { protect } from '../middleware/auth.js';
 import { body } from 'express-validator';
@@ -17,6 +20,19 @@ const router = express.Router();
 
 // All routes require authentication
 router.use(protect);
+
+// NEW: Extract receipt data only (no transaction creation)
+router.post('/extract-receipt', 
+  tempUpload.single('receipt'),
+  [
+    body('ocrEngine')
+      .optional()
+      .isIn(['tesseract', 'textract'])
+      .withMessage('OCR engine must be either tesseract or textract'),
+    handleValidationErrors
+  ],
+  extractReceiptData
+);
 
 // Receipt upload routes
 router.post('/receipt', 
@@ -45,6 +61,9 @@ router.post('/receipt',
 
 // Get available OCR engines
 router.get('/ocr-engines', getOcrEngines);
+
+// Get system status
+router.get('/system-status', getSystemStatus);
 
 // Process existing receipt
 router.post('/process-receipt/:filename', [

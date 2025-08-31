@@ -29,6 +29,7 @@ import transactionRoutes from './routes/transactionRoutes.js';
 import categoryRoutes from './routes/categoryRoutes.js';
 import uploadRoutes from './routes/uploadRoutes.js';
 import { errorHandler } from './middleware/errorHandler.js';
+import { scheduleReceiptCleanup, ensureUploadDirectories } from './utils/receiptCleanup.js';
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -62,6 +63,12 @@ app.use('*', (req, res) => {
 
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
+  
+  // Ensure upload directories exist
+  ensureUploadDirectories();
+  
+  // Start receipt cleanup scheduler (every 6 hours, cleanup files older than 24 hours)
+  scheduleReceiptCleanup(6, 24);
 });
 
 export default app;
