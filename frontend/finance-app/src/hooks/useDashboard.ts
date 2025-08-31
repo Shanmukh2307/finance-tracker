@@ -15,10 +15,23 @@ export const useDashboardData = () => {
       setIsLoading(true);
       setError(null);
 
+      // Get current month date range
+      const now = new Date();
+      const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+      const currentMonthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+      
+      // Format dates for API
+      const startDate = currentMonthStart.toISOString().split('T')[0];
+      const endDate = currentMonthEnd.toISOString().split('T')[0];
+
       // Fetch all dashboard data in parallel
       const [statsData, dailyStatsData, summaryData, transactionsData, categoriesData] = await Promise.all([
-        dashboardApi.getStats({ groupBy: 'month' }),
-        dashboardApi.getStats({ groupBy: 'day' }),
+        dashboardApi.getStats({ groupBy: 'month' }), // All-time stats for overview
+        dashboardApi.getStats({ 
+          groupBy: 'day', 
+          startDate: startDate, 
+          endDate: endDate 
+        }), // Current month daily stats
         dashboardApi.getMonthlySummary(),
         dashboardApi.getRecentTransactions(5),
         dashboardApi.getCategories(),

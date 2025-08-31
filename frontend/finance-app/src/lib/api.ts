@@ -103,6 +103,42 @@ export const dashboardApi = {
     });
     return response.data.data;
   },
+
+  // Create transaction
+  createTransaction: async (transactionData: {
+    type: 'income' | 'expense';
+    amount: number;
+    description: string;
+    categoryId: string;
+    date: string;
+    paymentMethod?: string;
+    tags?: string[];
+    notes?: string;
+    currency: string;
+  }) => {
+    const response = await axios.post(`${API_BASE_URL}/transactions`, transactionData, {
+      headers: getAuthHeaders()
+    });
+    return response.data.data;
+  },
+
+  // Update transaction
+  updateTransaction: async (id: string, transactionData: {
+    type?: 'income' | 'expense';
+    amount?: number;
+    description?: string;
+    categoryId?: string;
+    date?: string;
+    paymentMethod?: string;
+    tags?: string[];
+    notes?: string;
+    currency?: string;
+  }) => {
+    const response = await axios.put(`${API_BASE_URL}/transactions/${id}`, transactionData, {
+      headers: getAuthHeaders()
+    });
+    return response.data.data;
+  },
 };
 
 // Types for dashboard data
@@ -194,3 +230,11 @@ export interface ReceiptData {
   };
   confidence: number;
 }
+
+// Re-export commonly used functions for convenience
+export const getCategories = dashboardApi.getCategories;
+export const getTransactions = dashboardApi.getTransactions;
+export const createTransaction = dashboardApi.createTransaction;
+export const updateTransaction = dashboardApi.updateTransaction;
+export const deleteTransaction = dashboardApi.deleteTransaction;
+export const uploadReceipt = dashboardApi.uploadReceipt;

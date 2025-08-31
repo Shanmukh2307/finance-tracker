@@ -129,15 +129,25 @@ export const MonthlyTrendChart: React.FC<{ stats: DashboardStats }> = ({ stats }
     return acc;
   }, []);
 
-  // Calculate balance for each month
-  const processedData = monthlyData.map(item => ({
-    ...item,
-    balance: item.income - item.expense,
-    monthName: new Date(item.month + '-01').toLocaleDateString('en-US', { 
-      year: 'numeric', 
-      month: 'short' 
-    })
-  })).sort((a, b) => a.month.localeCompare(b.month));
+  // Sort by month chronologically first
+  const sortedData = monthlyData.sort((a, b) => a.month.localeCompare(b.month));
+
+  // Calculate running balance (cumulative from the beginning)
+  let runningBalance = 0;
+  const processedData = sortedData.map(item => {
+    const monthlyNet = item.income - item.expense;
+    runningBalance += monthlyNet;
+    
+    return {
+      ...item,
+      monthlyNet, // This month's income - expenses
+      balance: runningBalance, // Running cumulative balance
+      monthName: new Date(item.month + '-01').toLocaleDateString('en-US', { 
+        year: 'numeric', 
+        month: 'short' 
+      })
+    };
+  });
 
   const formatCurrency = (value: number) => 
     new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value);

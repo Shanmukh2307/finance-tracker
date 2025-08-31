@@ -1,13 +1,13 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState } from "react";
 import MainLayout from "@/components/MainLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { DashboardCharts } from "@/components/DashboardCharts";
 import { useAuth } from "@/contexts/AuthContext";
-import { useDashboardData, useReceiptUpload } from "@/hooks/useDashboard";
+import { useDashboardData } from "@/hooks/useDashboard";
 import { 
   DollarSign, 
   TrendingUp, 
@@ -32,10 +32,6 @@ export default function DashboardPage() {
     error, 
     refreshData 
   } = useDashboardData();
-  const { uploadReceipt, isUploading, uploadError } = useReceiptUpload();
-  
-  const [uploadSuccess, setUploadSuccess] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Calculate dashboard metrics
   const totalIncome = stats?.totals.find(t => t._id === 'income')?.total || 0;
@@ -47,26 +43,6 @@ export default function DashboardPage() {
   // Monthly data
   const monthlyBalance = monthlySummary?.balance || 0;
   const monthlyTransactions = monthlySummary?.transactionCount || 0;
-
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    try {
-      setUploadSuccess(null);
-      const result = await uploadReceipt(file);
-      setUploadSuccess(`Receipt uploaded successfully! Extracted data: ${result.data.structuredData?.merchant || 'Receipt processed'}`);
-      // Refresh dashboard data after upload
-      refreshData();
-    } catch (error) {
-      // Error is handled by the hook
-    }
-
-    // Clear the input
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
-  };
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -128,22 +104,6 @@ export default function DashboardPage() {
             Refresh
           </Button>
         </div>
-
-        {/* Upload Success Alert */}
-        {uploadSuccess && (
-          <Alert>
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>{uploadSuccess}</AlertDescription>
-          </Alert>
-        )}
-
-        {/* Upload Error Alert */}
-        {uploadError && (
-          <Alert variant="destructive">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>{uploadError}</AlertDescription>
-          </Alert>
-        )}
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -246,7 +206,7 @@ export default function DashboardPage() {
             <div className="flex justify-between items-center">
               <h2 className="text-2xl font-bold text-gray-900">Financial Analytics</h2>
               <div className="text-sm text-gray-600">
-                Visual insights from your transaction data
+                Current month: {new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
               </div>
             </div>
             <DashboardCharts 
@@ -263,39 +223,29 @@ export default function DashboardPage() {
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
                 <Upload className="h-5 w-5" />
-                <span>Upload Receipt</span>
+                <span>Add Transaction</span>
               </CardTitle>
               <CardDescription>
-                Scan and extract transaction data from receipts automatically
+                Add new transactions manually or by uploading receipts
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-                <Upload className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-sm text-gray-600 mb-2">
-                  Drop your receipt here or click to upload
+              <div className="space-y-3">
+                <p className="text-sm text-gray-600">
+                  Track your expenses and income by adding transactions to your account.
                 </p>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*,.pdf"
-                  onChange={handleFileUpload}
-                  className="hidden"
-                />
-                <Button
-                  variant="outline"
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={isUploading}
-                >
-                  {isUploading ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Processing...
-                    </>
-                  ) : (
-                    'Browse files'
-                  )}
-                </Button>
+                <div className="space-y-2">
+                  <Button 
+                    className="w-full"
+                    onClick={() => window.location.href = '/transactions'}
+                  >
+                    <Upload className="h-4 w-4 mr-2" />
+                    Go to Transactions
+                  </Button>
+                  <p className="text-xs text-gray-500 text-center">
+                    Upload receipts, add manually, or edit existing transactions
+                  </p>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -330,7 +280,7 @@ export default function DashboardPage() {
                       <div>
                         <p className="font-medium">{transaction.description}</p>
                         <p className="text-sm text-gray-600">
-                          {transaction.category?.name || 'Uncategorized'} • {formatDate(transaction.date)}
+                          {typeof transaction.categoryId === 'object' ? transaction.categoryId.name : 'Uncategorized'} • {formatDate(transaction.date)}
                         </p>
                       </div>
                       <span className={`font-medium ${

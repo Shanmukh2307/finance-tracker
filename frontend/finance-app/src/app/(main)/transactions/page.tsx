@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import MainLayout from "@/components/MainLayout";
+import TransactionFormModal from "@/components/TransactionFormModal";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -284,10 +285,19 @@ export default function TransactionsPage() {
               <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
               Refresh
             </Button>
-            <Button>
-              <Plus className="h-4 w-4 mr-2" />
-              Add Transaction
-            </Button>
+            <TransactionFormModal
+              mode="create"
+              categories={categories}
+              trigger={
+                <Button>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Transaction
+                </Button>
+              }
+              onSuccess={() => {
+                fetchTransactions(currentPage);
+              }}
+            />
           </div>
         </div>
 
@@ -477,10 +487,19 @@ export default function TransactionsPage() {
                     : 'Get started by adding your first transaction.'
                   }
                 </p>
-                <Button>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Transaction
-                </Button>
+                <TransactionFormModal
+                  mode="create"
+                  categories={categories}
+                  trigger={
+                    <Button>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Transaction
+                    </Button>
+                  }
+                  onSuccess={() => {
+                    fetchTransactions(currentPage);
+                  }}
+                />
               </div>
             ) : (
               <>
@@ -543,13 +562,22 @@ export default function TransactionsPage() {
                           </TableCell>
                           <TableCell>
                             <div className="flex space-x-2">
-                              <Button 
-                                variant="ghost" 
-                                size="sm"
-                                onClick={() => {/* TODO: Implement edit */}}
-                              >
-                                <Edit className="h-4 w-4" />
-                              </Button>
+                              <TransactionFormModal
+                                mode="edit"
+                                transaction={transaction}
+                                categories={categories}
+                                trigger={
+                                  <Button 
+                                    variant="ghost" 
+                                    size="sm"
+                                  >
+                                    <Edit className="h-4 w-4" />
+                                  </Button>
+                                }
+                                onSuccess={() => {
+                                  fetchTransactions(currentPage);
+                                }}
+                              />
                               <Button 
                                 variant="ghost" 
                                 size="sm"
