@@ -471,7 +471,8 @@ export const MonthlyTrendChart: React.FC<{ stats: DashboardStats }> = ({ stats }
   );
 };
 
-// Daily Spending Area Chart (for current month if data available)
+// Daily Spending Area Chart (DEPRECATED - use FilterableDailySpendingChart instead)
+// This component is kept for backward compatibility but not used in the main dashboard
 export const DailySpendingChart: React.FC<{ dailyStats?: DashboardStats | null }> = ({ dailyStats }) => {
   if (!dailyStats) {
     return (
@@ -561,9 +562,228 @@ export const EnhancedDashboardCharts: React.FC<ChartProps> = ({ stats, dailyStat
       {/* Second Row - Trends */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <MonthlyTrendChart stats={stats} />
-        <DailySpendingChart dailyStats={dailyStats} />
+        <FilterableDailySpendingChart />
       </div>
     </div>
+  );
+};
+
+// Enhanced Daily Spending Chart with date filtering
+export const FilterableDailySpendingChart: React.FC = () => {
+  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const [dailyData, setDailyData] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [showAllTime, setShowAllTime] = useState(false); // Default to current month for daily view
+
+  const fetchDailyData = async (month: number, year: number, allTime: boolean = false) => {
+    try {
+      setIsLoading(true);
+      
+      let stats;
+      if (allTime) {
+        // Fetch all-time daily data (last 30 days)
+        const endDate = new Date();
+        const startDate = new Date();
+        startDate.setDate(startDate.getDate() - 30);
+        
+        stats = await dashboardApi.getStats({ 
+          groupBy: 'day',
+          startDate: startDate.toISOString().split('T')[0],
+          endDate: endDate.toISOString().split('T')[0]
+        });
+      } else {
+        // Fetch data for specific month/year
+        const startDate = new Date(year, month - 1, 1);
+        const endDate = new Date(year, month, 0); // Last day of the month
+        
+        stats = await dashboardApi.getStats({ 
+          groupBy: 'day',
+          startDate: startDate.toISOString().split('T')[0],
+          endDate: endDate.toISOString().split('T')[0]
+        });
+      }
+
+      // Process daily expense data
+      const processedData = stats.stats
+        .filter((item: any) => item._id.day && item._id.type === 'expense')
+        .map((item: any) => ({
+          day: `${item._id.month}/${item._id.day}`,
+          amount: item.totalAmount,
+          count: item.count,
+          date: new Date(item._id.year, (item._id.month || 1) - 1, item._id.day || 1),
+          displayDate: `${item._id.month?.toString().padStart(2, '0')}/${item._id.day?.toString().padStart(2, '0')}`
+        }))
+        .sort((a: any, b: any) => a.date.getTime() - b.date.getTime());
+
+      setDailyData(processedData);
+    } catch (error) {
+      console.error('Error fetching daily data:', error);
+      setDailyData([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchDailyData(selectedMonth, selectedYear, showAllTime);
+  }, [selectedMonth, selectedYear, showAllTime]);
+
+  const formatCurrency = (value: number) => 
+    new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value);
+
+  const totalSpending = dailyData.reduce((sum, item) => sum + item.amount, 0);
+  const averageDaily = dailyData.length > 0 ? totalSpending / dailyData.length : 0;
+
+  return (
+    <Card>
+      <CardHeader className="pb-4">
+        {/* Title Section */}
+        <div className="flex items-center space-x-2 mb-4">
+          <Clock className="h-5 w-5 text-primary" />
+          <div>
+            <CardTitle>Daily Spending Trends</CardTitle>
+            <CardDescription>
+              {showAllTime 
+                ? 'Daily expenses over the last 30 days'
+                : `Daily expenses for ${selectedMonth.toString().padStart(2, '0')}/${selectedYear}`
+              }
+            </CardDescription>
+          </div>
+        </div>
+        
+        {/* Filter Section */}
+        <div className="flex items-center justify-between">
+          <div className="text-sm text-muted-foreground">
+            Filter by:
+          </div>
+          <div className="flex items-center space-x-2">
+            <Button
+              variant={showAllTime ? "default" : "outline"}
+              size="sm"
+              onClick={() => setShowAllTime(!showAllTime)}
+              className="flex items-center space-x-1"
+            >
+              <Filter className="h-4 w-4" />
+              <span>{showAllTime ? "Last 30 Days" : "Monthly"}</span>
+            </Button>
+            {!showAllTime && (
+              <MonthYearPicker
+                selectedMonth={selectedMonth}
+                selectedYear={selectedYear}
+                onDateChange={(month, year) => {
+                  setSelectedMonth(month);
+                  setSelectedYear(year);
+                }}
+              />
+            )}
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent>
+        {isLoading ? (
+          <div className="flex items-center justify-center h-[300px]">
+            <Loader2 className="h-6 w-6 animate-spin text-primary" />
+            <span className="ml-2 text-muted-foreground">Loading daily data...</span>
+          </div>
+        ) : dailyData.length === 0 ? (
+          <div className="flex items-center justify-center h-[300px] text-muted-foreground">
+            <div className="text-center">
+              <Clock className="h-12 w-12 mx-auto mb-4 opacity-50" />
+              <p className="text-lg font-medium">No daily spending data</p>
+              <p className="text-sm">
+                {showAllTime 
+                  ? 'No expenses found in the last 30 days' 
+                  : `No expenses found for ${selectedMonth.toString().padStart(2, '0')}/${selectedYear}`
+                }
+              </p>
+            </div>
+          </div>
+        ) : (
+          <>
+            {/* Summary Stats */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+              <div className="text-center p-3 bg-muted/50 rounded-lg">
+                <p className="text-sm text-muted-foreground">Total Period Spending</p>
+                <p className="text-lg font-semibold text-foreground">{formatCurrency(totalSpending)}</p>
+              </div>
+              <div className="text-center p-3 bg-muted/50 rounded-lg">
+                <p className="text-sm text-muted-foreground">Daily Average</p>
+                <p className="text-lg font-semibold text-foreground">{formatCurrency(averageDaily)}</p>
+              </div>
+              <div className="text-center p-3 bg-muted/50 rounded-lg">
+                <p className="text-sm text-muted-foreground">Days with Spending</p>
+                <p className="text-lg font-semibold text-foreground">{dailyData.length}</p>
+              </div>
+            </div>
+
+            {/* Area Chart */}
+            <ResponsiveContainer width="100%" height={300}>
+              <AreaChart data={dailyData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                <XAxis 
+                  dataKey="displayDate" 
+                  stroke="hsl(var(--muted-foreground))"
+                  fontSize={12}
+                  angle={-45}
+                  textAnchor="end"
+                  height={60}
+                />
+                <YAxis 
+                  tickFormatter={formatCurrency} 
+                  stroke="hsl(var(--muted-foreground))"
+                  fontSize={12}
+                />
+                <Tooltip 
+                  formatter={(value: number) => [formatCurrency(value), 'Daily Spending']}
+                  labelFormatter={(label) => `Date: ${label}`}
+                  contentStyle={{
+                    backgroundColor: 'hsl(var(--background))',
+                    border: '1px solid hsl(var(--border))',
+                    borderRadius: '8px'
+                  }}
+                />
+                <Area 
+                  type="monotone" 
+                  dataKey="amount" 
+                  stroke="#ef4444" 
+                  fill="#ef4444" 
+                  fillOpacity={0.3}
+                  strokeWidth={2}
+                  name="Daily Spending"
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+
+            {/* Additional insights */}
+            {dailyData.length > 0 && (
+              <div className="mt-4 p-3 bg-muted/30 rounded-lg">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="text-muted-foreground">Highest spending day: </span>
+                    <span className="font-medium">
+                      {(() => {
+                        const maxDay = dailyData.reduce((max, day) => day.amount > max.amount ? day : max);
+                        return `${maxDay.displayDate} (${formatCurrency(maxDay.amount)})`;
+                      })()}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Lowest spending day: </span>
+                    <span className="font-medium">
+                      {(() => {
+                        const minDay = dailyData.reduce((min, day) => day.amount < min.amount ? day : min);
+                        return `${minDay.displayDate} (${formatCurrency(minDay.amount)})`;
+                      })()}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
+          </>
+        )}
+      </CardContent>
+    </Card>
   );
 };
 

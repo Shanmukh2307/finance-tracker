@@ -12,7 +12,7 @@ export default function MainLayout({ children }: MainLayoutProps) {
     <ProtectedRoute>
       <div className="min-h-screen bg-background">
         <AppNavigation />
-        <main className="w-4/5 mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <main className="w-[90%] mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {children}
         </main>
       </div>

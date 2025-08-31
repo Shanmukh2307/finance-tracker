@@ -33,7 +33,7 @@ export default function AppNavigation() {
 
   return (
     <header className="bg-background border-b border-border sticky top-0 z-50">
-      <div className="w-4/5 mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="w-[90%] mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-20">
           {/* Logo */}
           <Link href="/dashboard" className="flex items-center space-x-2">

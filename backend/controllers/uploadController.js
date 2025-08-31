@@ -1,6 +1,7 @@
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
+import { promises as fsPromises } from 'fs';
 import { fileURLToPath } from 'url';
 import Transaction from '../models/Transaction.js';
 import Category from '../models/Category.js';
@@ -78,6 +79,55 @@ const tempStorage = multer.diskStorage({
 export const tempUpload = multer({
   storage: tempStorage,
   fileFilter,
+  limits: {
+    fileSize: parseInt(process.env.MAX_FILE_SIZE) || 10 * 1024 * 1024 // 10MB default
+  }
+});
+
+// Configure multer for transaction history uploads (CSV, TXT files)
+const historyFileFilter = (req, file, cb) => {
+  // Allow CSV, TXT, and TSV files for transaction history import
+  const allowedTypes = [
+    'text/csv',
+    'text/plain',
+    'text/tab-separated-values',
+    'application/csv',
+    'application/vnd.ms-excel', // Excel CSV exports
+    'text/x-csv'
+  ];
+  
+  // Also check file extension as backup
+  const extension = file.originalname.toLowerCase();
+  const allowedExtensions = ['.csv', '.txt', '.tsv'];
+  const hasValidExtension = allowedExtensions.some(ext => extension.endsWith(ext));
+  
+  if (allowedTypes.includes(file.mimetype) || hasValidExtension) {
+    cb(null, true);
+  } else {
+    cb(new Error('Invalid file type. Only CSV, TXT, and TSV files are allowed for transaction history import.'), false);
+  }
+};
+
+const historyStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const uploadPath = path.join(__dirname, '..', 'uploads', 'transaction-history');
+    
+    // Create directory if it doesn't exist
+    if (!fs.existsSync(uploadPath)) {
+      fs.mkdirSync(uploadPath, { recursive: true });
+    }
+    
+    cb(null, uploadPath);
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, `history-${uniqueSuffix}${path.extname(file.originalname)}`);
+  }
+});
+
+export const historyUpload = multer({
+  storage: historyStorage,
+  fileFilter: historyFileFilter,
   limits: {
     fileSize: parseInt(process.env.MAX_FILE_SIZE) || 10 * 1024 * 1024 // 10MB default
   }
@@ -660,11 +710,15 @@ export const uploadTransactionHistory = asyncHandler(async (req, res) => {
 
     // Extract text based on file type
     if (fileType === 'application/pdf') {
-      const parsedData = await ocrService.processPdfReceipt(filePath);
-      extractedText = parsedData.rawText;
+      // For now, PDF table extraction is not fully implemented
+      // Users should upload CSV files for bulk import
+      throw new Error('PDF table extraction not yet implemented. Please export your data as CSV format and upload that instead.');
+    } else if (fileType === 'text/csv' || req.file.originalname.endsWith('.csv')) {
+      // For CSV files, read as text
+      extractedText = await fsPromises.readFile(filePath, 'utf8');
     } else {
-      // For other file types, read as text
-      extractedText = await fs.readFileSync(filePath, 'utf8');
+      // For other file types, try to read as text
+      extractedText = await fsPromises.readFile(filePath, 'utf8');
     }
 
     // Parse tabular data
@@ -717,7 +771,7 @@ export const uploadTransactionHistory = asyncHandler(async (req, res) => {
 
     // Clean up uploaded file
     try {
-      await fs.unlinkSync(filePath);
+      await fsPromises.unlink(filePath);
     } catch (cleanupError) {
       console.error('Error cleaning up uploaded file:', cleanupError);
     }
@@ -743,7 +797,7 @@ export const uploadTransactionHistory = asyncHandler(async (req, res) => {
     // Clean up file on error
     if (req.file && req.file.path) {
       try {
-        await fs.unlinkSync(req.file.path);
+        await fsPromises.unlink(req.file.path);
       } catch (cleanupError) {
         console.error('Error cleaning up file on error:', cleanupError);
       }

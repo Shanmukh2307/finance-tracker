@@ -2,6 +2,7 @@ import express from 'express';
 import {
   upload,
   tempUpload,
+  historyUpload,
   uploadReceipt,
   extractReceiptData,
   processUploadedReceipt,
@@ -97,7 +98,7 @@ router.get('/receipt/:filename', getReceiptFile);
 
 // Transaction history upload
 router.post('/transaction-history',
-  upload.single('file'),
+  historyUpload.single('file'),
   uploadTransactionHistory
 );
 

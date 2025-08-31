@@ -1,0 +1,4 @@
+Date              Description           Amount      Category
+2024-08-12        Restaurant Dinner     -125.50     Food & Dining
+2024-08-12        Consulting Fee        750.00      Freelance Income
+2024-08-13        Movie Tickets         -28.00      Entertainment
