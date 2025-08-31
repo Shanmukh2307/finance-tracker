@@ -205,8 +205,8 @@ export default function CategoriesPage() {
         {/* Header */}
         <div className="flex justify-between items-start">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Categories</h1>
-            <p className="mt-2 text-gray-600">
+            <h1 className="text-3xl font-bold text-foreground">Categories</h1>
+            <p className="mt-2 text-muted-foreground">
               Organize your transactions with custom categories
             </p>
           </div>
@@ -307,7 +307,7 @@ export default function CategoriesPage() {
                 <div className="space-y-2">
                   <Label htmlFor="search">Search</Label>
                   <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
                       id="search"
                       placeholder="Search categories..."
@@ -374,16 +374,16 @@ export default function CategoriesPage() {
             {isLoading ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {[...Array(6)].map((_, i) => (
-                  <div key={i} className="h-32 bg-gray-200 rounded-lg animate-pulse" />
+                  <div key={i} className="h-32 bg-muted rounded-lg animate-pulse" />
                 ))}
               </div>
             ) : filteredCategories.length === 0 ? (
               <div className="text-center py-8">
-                <Palette className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                <Palette className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-foreground mb-2">
                   {categories.length === 0 ? 'No categories yet' : 'No categories found'}
                 </h3>
-                <p className="text-gray-600 mb-4">
+                <p className="text-muted-foreground mb-4">
                   {categories.length === 0 
                     ? 'Create your first category to organize transactions'
                     : 'Try adjusting your filters or search criteria'
@@ -432,9 +432,9 @@ export default function CategoriesPage() {
                           </span>
                         </div>
                         <div className={viewMode === 'list' ? '' : 'flex-1'}>
-                          <h3 className="font-medium text-gray-900">{category.name}</h3>
+                          <h3 className="font-medium text-foreground">{category.name}</h3>
                           {category.description && (
-                            <p className="text-sm text-gray-600 mt-1">{category.description}</p>
+                            <p className="text-sm text-muted-foreground mt-1">{category.description}</p>
                           )}
                         </div>
                       </div>

@@ -6,6 +6,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { DashboardCharts } from "@/components/DashboardCharts";
+import { EnhancedDashboardCharts } from "@/components/EnhancedDashboardCharts";
+import { FilterableCategoryBreakdown } from "@/components/FilterableCategoryBreakdown";
 import { useAuth } from "@/contexts/AuthContext";
 import { useDashboardData } from "@/hooks/useDashboard";
 import { 
@@ -88,10 +90,10 @@ export default function DashboardPage() {
         {/* Welcome Header */}
         <div className="flex justify-between items-start">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">
+            <h1 className="text-3xl font-bold text-foreground">
               Welcome back, {user?.name}!
             </h1>
-            <p className="mt-2 text-gray-600">
+            <p className="mt-2 text-muted-foreground">
               Here's an overview of your financial activity
             </p>
           </div>
@@ -204,12 +206,12 @@ export default function DashboardPage() {
         {!isLoading && stats && (
           <div className="space-y-6">
             <div className="flex justify-between items-center">
-              <h2 className="text-2xl font-bold text-gray-900">Financial Analytics</h2>
-              <div className="text-sm text-gray-600">
+              <h2 className="text-2xl font-bold text-foreground">Financial Analytics</h2>
+              <div className="text-sm text-muted-foreground">
                 Current month: {new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
               </div>
             </div>
-            <DashboardCharts 
+            <EnhancedDashboardCharts 
               stats={stats} 
               dailyStats={dailyStats}
               monthlySummary={monthlySummary!} 
@@ -231,7 +233,7 @@ export default function DashboardPage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-muted-foreground">
                   Track your expenses and income by adding transactions to your account.
                 </p>
                 <div className="space-y-2">
@@ -242,7 +244,7 @@ export default function DashboardPage() {
                     <Upload className="h-4 w-4 mr-2" />
                     Go to Transactions
                   </Button>
-                  <p className="text-xs text-gray-500 text-center">
+                  <p className="text-xs text-muted-foreground text-center">
                     Upload receipts, add manually, or edit existing transactions
                   </p>
                 </div>
@@ -279,7 +281,7 @@ export default function DashboardPage() {
                     <div key={transaction._id} className="flex items-center justify-between">
                       <div>
                         <p className="font-medium">{transaction.description}</p>
-                        <p className="text-sm text-gray-600">
+                        <p className="text-sm text-muted-foreground">
                           {typeof transaction.categoryId === 'object' ? transaction.categoryId.name : 'Uncategorized'} • {formatDate(transaction.date)}
                         </p>
                       </div>
@@ -293,65 +295,17 @@ export default function DashboardPage() {
                 </div>
               ) : (
                 <div className="text-center py-4">
-                  <Receipt className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                  <p className="text-sm text-gray-600">No transactions yet</p>
-                  <p className="text-xs text-gray-500">Start by uploading a receipt or adding a transaction</p>
+                  <Receipt className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                  <p className="text-sm text-muted-foreground">No transactions yet</p>
+                  <p className="text-xs text-muted-foreground">Start by uploading a receipt or adding a transaction</p>
                 </div>
               )}
             </CardContent>
           </Card>
         </div>
 
-        {/* Category Breakdown */}
-        {!isLoading && stats && stats.categoryStats.length > 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <PieChart className="h-5 w-5" />
-                <span>Spending by Category</span>
-              </CardTitle>
-              <CardDescription>
-                Your top spending categories
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {stats.categoryStats
-                  .filter(cat => cat._id.type === 'expense')
-                  .slice(0, 5)
-                  .map((category) => {
-                    const percentage = totalExpense > 0 ? (category.totalAmount / totalExpense) * 100 : 0;
-                    return (
-                      <div key={category._id.categoryId} className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center space-x-2">
-                            <div 
-                              className="w-3 h-3 rounded-full" 
-                              style={{ backgroundColor: category._id.categoryColor }}
-                            ></div>
-                            <span className="font-medium">{category._id.categoryName}</span>
-                          </div>
-                          <div className="text-right">
-                            <span className="font-medium">{formatCurrency(category.totalAmount)}</span>
-                            <span className="text-sm text-gray-500 ml-2">({percentage.toFixed(1)}%)</span>
-                          </div>
-                        </div>
-                        <div className="w-full bg-gray-200 rounded-full h-2">
-                          <div 
-                            className="h-2 rounded-full" 
-                            style={{ 
-                              backgroundColor: category._id.categoryColor, 
-                              width: `${percentage}%` 
-                            }}
-                          ></div>
-                        </div>
-                      </div>
-                    );
-                  })}
-              </div>
-            </CardContent>
-          </Card>
-        )}
+        {/* Category Breakdown - Dynamic Version */}
+        <FilterableCategoryBreakdown />
       </div>
     </MainLayout>
   );

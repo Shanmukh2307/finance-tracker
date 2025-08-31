@@ -322,7 +322,7 @@ export default function TransactionFormModal({
                   onDrop={handleDrop}
                 >
                   <div className="flex flex-col items-center space-y-2">
-                    <Camera className="h-10 w-10 text-gray-400" />
+                    <Camera className="h-10 w-10 text-muted-foreground" />
                     <div className="text-sm">
                       <span className="font-medium text-blue-600 hover:text-blue-500 cursor-pointer">
                         <input
@@ -336,9 +336,9 @@ export default function TransactionFormModal({
                           Click to upload
                         </label>
                       </span>
-                      <span className="text-gray-500"> or drag and drop</span>
+                      <span className="text-muted-foreground"> or drag and drop</span>
                     </div>
-                    <p className="text-xs text-gray-500">PNG, JPG, PDF up to 10MB</p>
+                    <p className="text-xs text-muted-foreground">PNG, JPG, PDF up to 10MB</p>
                   </div>
                 </div>
               ) : (
@@ -349,7 +349,7 @@ export default function TransactionFormModal({
                         <FileText className="h-8 w-8 text-blue-500" />
                         <div>
                           <p className="text-sm font-medium">{uploadedFile.name}</p>
-                          <p className="text-xs text-gray-500">
+                          <p className="text-xs text-muted-foreground">
                             {(uploadedFile.size / 1024 / 1024).toFixed(2)} MB
                           </p>
                         </div>

@@ -83,7 +83,7 @@ export default function TransactionsPage() {
 
       const params: any = {
         page,
-        limit: 20,
+        limit: 12,
         // Only include non-default filter values
         ...(filters.search && { search: filters.search }),
         ...(filters.categoryId !== 'all' && { categoryId: filters.categoryId }),
@@ -109,8 +109,8 @@ export default function TransactionsPage() {
       console.log('First transaction categoryId:', data.transactions?.[0]?.categoryId);
       
       setTransactions(data.transactions || []);
-      setCurrentPage(data.pagination?.currentPage || 1);
-      setTotalPages(data.pagination?.totalPages || 1);
+      setCurrentPage(data.pagination?.current || 1);
+      setTotalPages(data.pagination?.pages || 1);
       setTotalTransactions(data.pagination?.total || 0);
     } catch (err: any) {
       console.error('Error fetching transactions:', err);
@@ -271,8 +271,8 @@ export default function TransactionsPage() {
         {/* Header */}
         <div className="flex justify-between items-start">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Transactions</h1>
-            <p className="mt-2 text-gray-600">
+            <h1 className="text-3xl font-bold text-foreground">Transactions</h1>
+            <p className="mt-2 text-muted-foreground">
               Manage and view all your financial transactions
             </p>
           </div>
@@ -365,7 +365,7 @@ export default function TransactionsPage() {
                 <div className="space-y-2">
                   <Label htmlFor="search">Search</Label>
                   <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
                       id="search"
                       placeholder="Search description..."
@@ -473,9 +473,9 @@ export default function TransactionsPage() {
               </div>
             ) : transactions.length === 0 ? (
               <div className="text-center py-8">
-                <DollarSign className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No transactions found</h3>
-                <p className="text-gray-600 mb-4">
+                <DollarSign className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-foreground mb-2">No transactions found</h3>
+                <p className="text-muted-foreground mb-4">
                   {[
                     filters.search,
                     filters.categoryId !== 'all' ? filters.categoryId : '',
@@ -534,7 +534,7 @@ export default function TransactionsPage() {
                             <div>
                               <div className="font-medium">{transaction.description}</div>
                               {transaction.notes && (
-                                <div className="text-sm text-gray-500">{transaction.notes}</div>
+                                <div className="text-sm text-muted-foreground">{transaction.notes}</div>
                               )}
                             </div>
                           </TableCell>
@@ -587,7 +587,7 @@ export default function TransactionsPage() {
                                 {isDeleting === transaction._id ? (
                                   <Loader2 className="h-4 w-4 animate-spin" />
                                 ) : (
-                                  <Trash2 className="h-4 w-4 text-red-600" />
+                                  <Trash2 className="h-4 w-4 text-destructive" />
                                 )}
                               </Button>
                             </div>
@@ -601,7 +601,7 @@ export default function TransactionsPage() {
                 {/* Pagination */}
                 {totalPages > 1 && (
                   <div className="flex items-center justify-between mt-6">
-                    <div className="text-sm text-gray-700">
+                    <div className="text-sm text-muted-foreground">
                       Showing page {currentPage} of {totalPages}
                     </div>
                     <div className="flex space-x-2">

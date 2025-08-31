@@ -429,6 +429,20 @@ export const getTransactionStats = asyncHandler(async (req, res) => {
     console.log('Stats Debug - Date filter with dates:', dateFilter);
   }
 
+  // Debug: Check if transactions exist for this user
+  const transactionCount = await Transaction.countDocuments({ userId: userId, isDeleted: false });
+  console.log('Stats Debug - Total transactions for user:', transactionCount);
+
+  // Debug: Check transactions in date range
+  if (startDate || endDate) {
+    const dateRangeCount = await Transaction.countDocuments(dateFilter);
+    console.log('Stats Debug - Transactions in date range:', dateRangeCount);
+    
+    // Show sample transactions
+    const sampleTransactions = await Transaction.find(dateFilter).limit(5).select('type amount date description');
+    console.log('Stats Debug - Sample transactions:', JSON.stringify(sampleTransactions, null, 2));
+  }
+
   // Aggregation pipeline
   const pipeline = [
     { $match: dateFilter },
@@ -451,13 +465,21 @@ export const getTransactionStats = asyncHandler(async (req, res) => {
     { $sort: { '_id.year': 1, '_id.month': 1, '_id.day': 1 } }
   ];
 
-  const stats = await Transaction.aggregate(pipeline);
   console.log('Stats Debug - Aggregation pipeline:', JSON.stringify(pipeline, null, 2));
+
+  const stats = await Transaction.aggregate(pipeline);
   console.log('Stats Debug - Stats result:', JSON.stringify(stats, null, 2));
 
-  // Calculate totals
+  // Calculate totals with proper ObjectId matching
+  const totalsFilter = { userId: userId, isDeleted: false };
+  if (startDate || endDate) {
+    totalsFilter.date = {};
+    if (startDate) totalsFilter.date.$gte = new Date(startDate);
+    if (endDate) totalsFilter.date.$lte = new Date(endDate);
+  }
+
   const totals = await Transaction.aggregate([
-    { $match: dateFilter },
+    { $match: totalsFilter },
     {
       $group: {
         _id: '$type',
@@ -468,9 +490,9 @@ export const getTransactionStats = asyncHandler(async (req, res) => {
   ]);
   console.log('Stats Debug - Totals result:', JSON.stringify(totals, null, 2));
 
-  // Category breakdown
+  // Category breakdown with proper ObjectId matching
   const categoryStats = await Transaction.aggregate([
-    { $match: dateFilter },
+    { $match: totalsFilter },
     {
       $lookup: {
         from: 'categories',

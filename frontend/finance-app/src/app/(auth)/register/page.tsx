@@ -82,7 +82,7 @@ export default function RegisterPage() {
 
   const PasswordRequirement = ({ met, text }: { met: boolean; text: string }) => (
     <div className={`flex items-center space-x-2 text-sm ${met ? 'text-green-600' : 'text-muted-foreground'}`}>
-      <CheckCircle className={`h-3 w-3 ${met ? 'text-green-600' : 'text-gray-300'}`} />
+      <CheckCircle className={`h-3 w-3 ${met ? 'text-green-600' : 'text-muted-foreground'}`} />
       <span>{text}</span>
     </div>
   );

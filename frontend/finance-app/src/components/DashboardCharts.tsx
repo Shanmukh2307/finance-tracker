@@ -190,7 +190,7 @@ export const MonthlyTrendChart: React.FC<{ stats: DashboardStats }> = ({ stats }
 export const DailySpendingChart: React.FC<{ dailyStats?: DashboardStats | null }> = ({ dailyStats }) => {
   if (!dailyStats) {
     return (
-      <div className="flex items-center justify-center h-[300px] text-gray-500">
+      <div className="flex items-center justify-center h-[300px] text-muted-foreground">
         <p>Daily data not available</p>
       </div>
     );
@@ -212,7 +212,7 @@ export const DailySpendingChart: React.FC<{ dailyStats?: DashboardStats | null }
 
   if (dailyData.length === 0) {
     return (
-      <div className="flex items-center justify-center h-[300px] text-gray-500">
+      <div className="flex items-center justify-center h-[300px] text-muted-foreground">
         <p>Switch to daily view to see daily spending trends</p>
       </div>
     );
