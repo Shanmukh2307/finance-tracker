@@ -8,6 +8,8 @@ A comprehensive full-stack finance tracking application with OCR receipt process
 ![MongoDB](https://img.shields.io/badge/MongoDB-Latest-green)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5+-blue)
 
+Youtube Demo link : https://youtu.be/RN9UWaxZZbw
+
 ## 🚀 Features
 
 ### Core Functionality
@@ -320,5 +322,6 @@ npm run lint
 - [Tesseract.js](https://tesseract.projectnaptha.com/) for local OCR processing
 - [MongoDB](https://www.mongodb.com/) for the database
 - [Next.js](https://nextjs.org/) for the frontend framework
+
 
 
